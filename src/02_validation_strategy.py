@@ -13,22 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "train-test.csv"
 
 
-# --------------------------------------------------
-# Load data
-# --------------------------------------------------
-
 df = pd.read_csv(DATA_PATH)
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
 df = df.sort_values("date").reset_index(drop=True)
 
-
-# --------------------------------------------------
-# Temporal split configuration
-#
-# Jul, Aug, Sep = model-development folds
-# Oct = untouched final internal holdout
-# --------------------------------------------------
 
 FOLDS = [
     {
@@ -59,10 +48,6 @@ FINAL_HOLDOUT = {
 }
 
 
-# --------------------------------------------------
-# Metrics
-# --------------------------------------------------
-
 def calculate_metrics(y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
@@ -74,16 +59,6 @@ def calculate_metrics(y_true, y_pred):
         "R2": r2,
     }
 
-
-# --------------------------------------------------
-# Baseline
-#
-# Baseline 1:
-# global median historical rate-per-mile
-#
-# Baseline 2:
-# median historical rate-per-mile by equipment type
-# --------------------------------------------------
 
 def evaluate_split(train, valid, split_name):
 
@@ -103,9 +78,6 @@ def evaluate_split(train, valid, split_name):
         f"({len(valid):,} rows)"
     )
 
-    # --------------------------------------------------
-    # Check unseen locations
-    # --------------------------------------------------
 
     known_pickups = set(train["pickup"].dropna())
     known_deliveries = set(train["delivery"].dropna())
@@ -122,17 +94,11 @@ def evaluate_split(train, valid, split_name):
         f"({len(unseen_rows) / len(valid) * 100:.2f}%)"
     )
 
-    # --------------------------------------------------
-    # Historical rate per mile
-    # --------------------------------------------------
 
     train_rpm = train["posted_rate"] / train["distance"]
 
     global_median_rpm = train_rpm.median()
 
-    # --------------------------------------------------
-    # Baseline 1
-    # --------------------------------------------------
 
     pred_global = valid["distance"] * global_median_rpm
 
@@ -154,10 +120,6 @@ def evaluate_split(train, valid, split_name):
         f"R2:   {global_metrics['R2']:.4f}"
     )
 
-    # --------------------------------------------------
-    # Baseline 2:
-    # median RPM by equipment
-    # --------------------------------------------------
 
     temp = train[["equipment"]].copy()
     temp["rate_per_mile"] = train_rpm
@@ -204,10 +166,6 @@ def evaluate_split(train, valid, split_name):
     }
 
 
-# --------------------------------------------------
-# Development folds
-# --------------------------------------------------
-
 results = []
 
 print("=" * 75)
@@ -238,11 +196,6 @@ for fold in FOLDS:
 
     results.append(result)
 
-
-# --------------------------------------------------
-# CV summary
-# --------------------------------------------------
-
 results_df = pd.DataFrame(results)
 
 print("\n" + "=" * 75)
@@ -257,10 +210,6 @@ print(f"${results_df['global_mae'].mean():.2f}")
 print("\nAverage Equipment RPM MAE:")
 print(f"${results_df['equipment_mae'].mean():.2f}")
 
-
-# --------------------------------------------------
-# Final untouched October holdout
-# --------------------------------------------------
 
 train_mask = (
     df["date"]
