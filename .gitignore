@@ -1,0 +1,19 @@
+
+```text
+__pycache__/
+*.pyc
+.venv/
+
+# Raw assessment data
+data/*.csv
+
+# Local diagnostic outputs
+outputs/catboost_experiments.csv
+outputs/common_feature_cv.csv
+outputs/feature_importance.csv
+outputs/final_feature_importance.csv
+outputs/october_holdout_errors.csv
+
+# Original assessment files
+freight-rate-ml-assessment.pdf
+assessment_readme_original.md
