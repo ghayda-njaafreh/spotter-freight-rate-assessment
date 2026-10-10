@@ -18,10 +18,6 @@ TEMPLATE_PATH = DATA_DIR / "validation-predictions-template.csv"
 DECEMBER_PATH = DATA_DIR / "december-chart-inputs.csv"
 
 
-# ============================================================
-# LOAD DATA
-# ============================================================
-
 train = pd.read_csv(TRAIN_PATH)
 validation = pd.read_csv(VALIDATION_PATH)
 template = pd.read_csv(TEMPLATE_PATH)
@@ -38,15 +34,10 @@ december["date"] = pd.to_datetime(
 )
 
 
-# ============================================================
-# FEATURE ENGINEERING - FULL MODEL
-# ============================================================
-
 def prepare_full_features(frame):
 
     data = frame.copy()
 
-    # Weight-quality features
     data["weight_missing"] = (
         data["weight"].isna().astype(int)
     )
@@ -55,13 +46,11 @@ def prepare_full_features(frame):
         (data["weight"] < 0).astype(int)
     )
 
-    # Best strategy found during development CV
     data["weight_clean"] = data["weight"].where(
         data["weight"] >= 0,
         np.nan,
     )
 
-    # Time features
     data["month"] = data["date"].dt.month
     data["day_of_week"] = data["date"].dt.dayofweek
     data["day_of_year"] = data["date"].dt.dayofyear
@@ -80,7 +69,6 @@ def prepare_full_features(frame):
         / 365.25
     )
 
-    # Route feature
     data["route"] = (
         data["pickup"].astype(str)
         + "__"
@@ -125,10 +113,6 @@ def prepare_full_features(frame):
 
     return data[features], categorical
 
-
-# ============================================================
-# FEATURE ENGINEERING - COMMON / DECEMBER MODEL
-# ============================================================
 
 def prepare_common_features(frame):
 
@@ -208,15 +192,6 @@ def prepare_common_features(frame):
     return data[features], categorical
 
 
-# ============================================================
-# 1. FINAL MAIN MODEL
-#
-# Uses all 48,000 labeled rows.
-#
-# 159 trees = median best tree count from the
-# development temporal CV for the winning model.
-# ============================================================
-
 print("=" * 80)
 print("TRAINING FINAL FULL-FEATURE MODEL")
 print("=" * 80)
@@ -255,10 +230,6 @@ validation_prediction = np.maximum(
 )
 
 
-# ============================================================
-# Validate IDs before creating submission
-# ============================================================
-
 if len(validation) != 12000:
     raise ValueError(
         f"Expected 12,000 validation rows, "
@@ -278,7 +249,6 @@ prediction_map = pd.DataFrame(
 )
 
 
-# Use the supplied template order
 submission = (
     template[["load_id"]]
     .merge(
@@ -334,13 +304,6 @@ print(
 )
 
 
-# ============================================================
-# 2. BUILD CITY COORDINATE LOOKUP
-#
-# December file does not provide lat/lon.
-# We derive coordinates from the labeled data.
-# ============================================================
-
 pickup_locations = train[
     [
         "pickup",
@@ -377,8 +340,7 @@ locations = pd.concat(
     ignore_index=True,
 )
 
-# Median makes the lookup robust if tiny coordinate
-# inconsistencies exist for the same city.
+
 city_coordinates = (
     locations
     .groupby("city")[["lat", "lon"]]
@@ -398,10 +360,6 @@ def lookup_coordinate(city, coordinate):
         coordinate,
     ]
 
-
-# ============================================================
-# Enrich December inputs
-# ============================================================
 
 december_model_input = december.copy()
 
@@ -437,15 +395,6 @@ december_model_input["delivery_lon"] = (
     )
 )
 
-
-# ============================================================
-# 3. DECEMBER COMMON-FEATURE MODEL
-#
-# market_index and quote_signal are intentionally excluded
-# because those fields are not supplied in the December input.
-#
-# 488 trees = median best tree count from common-feature CV.
-# ============================================================
 
 print("\n" + "=" * 80)
 print("TRAINING DECEMBER COMMON-FEATURE MODEL")
@@ -489,10 +438,6 @@ december_prediction = np.maximum(
     0.01,
 )
 
-
-# ============================================================
-# Restore original December file structure exactly
-# ============================================================
 
 december_output = december[
     [
@@ -568,10 +513,6 @@ print(
     f"{DECEMBER_OUTPUT_PATH.name}"
 )
 
-
-# ============================================================
-# Feature importance - final main model
-# ============================================================
 
 feature_importance = pd.DataFrame(
     {
