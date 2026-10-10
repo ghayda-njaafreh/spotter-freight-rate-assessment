@@ -141,8 +141,13 @@ It contains exactly:
 
 ```text
 load_id,predicted_rate
+```
+
 for all 12,000 validation loads.
-Project Structure
+
+## Project Structure
+
+```text
 .
 ├── src/
 │   ├── 01_eda.py
@@ -153,52 +158,91 @@ Project Structure
 │   └── 06_generate_predictions.py
 │
 ├── outputs/
-├── reports/
+│   └── december_chart_inputs_completed.csv
+│
 ├── scorer_results/
 │   └── candidate_december.png
 │
 ├── validation_predictions.csv
 ├── requirements.txt
+├── score.py
 └── README.md
+```
 
 Raw assessment datasets are intentionally excluded from the repository.
-Setup
+
+## Setup
+
 Create or activate a Python environment and install the dependencies:
+
+```bash
 python -m pip install -r requirements.txt
+```
 
 Place the assessment CSV files inside:
+
+```text
 data/
+```
 
 Required files:
+
+```text
 train-test.csv
 validation.csv
 validation-predictions-template.csv
 december-chart-inputs.csv
+```
 
-Run
+## Run
+
 Exploratory analysis:
+
+```bash
 python src/01_eda.py
+```
 
 Baseline and temporal validation:
+
+```bash
 python src/02_validation_strategy.py
+```
 
 Model experiments:
+
+```bash
 python src/03_catboost_experiments.py
+```
 
 Final October holdout:
-python src/04_final_holdout.py
 
-Common feature validation:
+```bash
+python src/04_final_holdout.py
+```
+
+Common-feature validation:
+
+```bash
 python src/05_common_feature_check.py
+```
 
 Generate final predictions:
+
+```bash
 python src/06_generate_predictions.py
+```
 
 Validate the final files with the supplied Spotter scorer:
-python score.py --predictions validation_predictions.csv --december-predictions outputs/december_chart_inputs_completed.csv
 
-Successful validation should confirm:
+```bash
+python score.py --predictions validation_predictions.csv --december-predictions outputs/december_chart_inputs_completed.csv
+```
+
+Successful validation confirms:
+
+```text
 Validated 12,000 final predictions.
 Validated 31 fixed December predictions.
+```
 
 Final validation performance on the 12,000 unlabeled loads is calculated by Spotter after submission.
