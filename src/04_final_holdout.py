@@ -190,10 +190,6 @@ print(f"90th pct error:  ${p90_error:.2f}")
 print(f"95th pct error:  ${p95_error:.2f}")
 
 
-# --------------------------------------------------
-# Error analysis table
-# --------------------------------------------------
-
 analysis = holdout[
     [
         "load_id",
@@ -234,10 +230,6 @@ analysis.to_csv(
     index=False,
 )
 
-
-# --------------------------------------------------
-# Feature importance
-# --------------------------------------------------
 
 importance = pd.DataFrame(
     {
