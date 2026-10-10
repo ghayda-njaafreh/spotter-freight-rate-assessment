@@ -18,34 +18,22 @@ OUTPUT_DIR = ROOT / "outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
-# --------------------------------------------------
-# Load data
-# --------------------------------------------------
-
 df = pd.read_csv(DATA_PATH)
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 df = df.sort_values("date").reset_index(drop=True)
 
 
-# --------------------------------------------------
-# Feature engineering
-# --------------------------------------------------
-
 def prepare_features(frame):
     data = frame.copy()
 
-    # Weight quality
     data["weight_missing"] = data["weight"].isna().astype(int)
     data["weight_negative"] = (data["weight"] < 0).astype(int)
 
-    # Best strategy from development CV:
-    # negative weights are treated as invalid / missing
     data["weight_clean"] = data["weight"].where(
         data["weight"] >= 0,
         np.nan,
     )
 
-    # Date features
     data["month"] = data["date"].dt.month
     data["day_of_week"] = data["date"].dt.dayofweek
     data["day_of_year"] = data["date"].dt.dayofyear
@@ -58,7 +46,6 @@ def prepare_features(frame):
         2 * np.pi * data["day_of_year"] / 365.25
     )
 
-    # Route
     data["route"] = (
         data["pickup"].astype(str)
         + "__"
@@ -104,13 +91,6 @@ def prepare_features(frame):
     return data[features], categorical
 
 
-# --------------------------------------------------
-# Temporal holdout
-#
-# Train: Jan -> Sep
-# Holdout: Oct
-# --------------------------------------------------
-
 train = df[df["date"] <= "2025-09-30"].copy()
 
 holdout = df[
@@ -136,10 +116,6 @@ print(
 )
 
 
-# --------------------------------------------------
-# Prepare features
-# --------------------------------------------------
-
 X_train, categorical = prepare_features(train)
 X_holdout, _ = prepare_features(holdout)
 
@@ -151,16 +127,6 @@ cat_indices = [
     for column in categorical
 ]
 
-
-# --------------------------------------------------
-# Final development model
-#
-# 159 trees = median best tree count
-# from July/August/September CV.
-#
-# IMPORTANT:
-# No early stopping using October.
-# --------------------------------------------------
 
 model = CatBoostRegressor(
     iterations=159,
@@ -179,17 +145,8 @@ model.fit(
 )
 
 
-# --------------------------------------------------
-# Predict
-# --------------------------------------------------
-
 pred = model.predict(X_holdout)
 pred = np.maximum(pred, 0.01)
-
-
-# --------------------------------------------------
-# Metrics
-# --------------------------------------------------
 
 mae = mean_absolute_error(y_holdout, pred)
 
