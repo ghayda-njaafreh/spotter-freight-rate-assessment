@@ -17,20 +17,11 @@ OUTPUT_DIR = ROOT / "outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
-# --------------------------------------------------
-# Load
-# --------------------------------------------------
-
 df = pd.read_csv(DATA_PATH)
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 df = df.sort_values("date").reset_index(drop=True)
 
 
-# --------------------------------------------------
-# Development folds only
-#
-# October is NOT used here.
-# --------------------------------------------------
 
 FOLDS = [
     {
@@ -54,23 +45,9 @@ FOLDS = [
 ]
 
 
-# --------------------------------------------------
-# Common feature schema
-#
-# These features can also be made available
-# for the December chart rows.
-#
-# market_index and quote_signal are intentionally
-# excluded because December does not provide them.
-# --------------------------------------------------
-
 def prepare_features(frame):
 
     data = frame.copy()
-
-    # -----------------------------
-    # Weight cleaning
-    # -----------------------------
 
     data["weight_missing"] = (
         data["weight"].isna().astype(int)
@@ -85,9 +62,6 @@ def prepare_features(frame):
         np.nan,
     )
 
-    # -----------------------------
-    # Time features
-    # -----------------------------
 
     data["month"] = data["date"].dt.month
     data["day_of_week"] = data["date"].dt.dayofweek
@@ -105,9 +79,6 @@ def prepare_features(frame):
         / 365.25
     )
 
-    # -----------------------------
-    # Route
-    # -----------------------------
 
     data["route"] = (
         data["pickup"].astype(str)
@@ -151,10 +122,6 @@ def prepare_features(frame):
 
     return data[features], categorical
 
-
-# --------------------------------------------------
-# Run CV
-# --------------------------------------------------
 
 results = []
 
@@ -252,10 +219,6 @@ for fold in FOLDS:
     )
 
 
-# --------------------------------------------------
-# Summary
-# --------------------------------------------------
-
 results_df = pd.DataFrame(results)
 
 print("\n" + "=" * 80)
@@ -286,10 +249,6 @@ print(
     f"{median_trees}"
 )
 
-
-# --------------------------------------------------
-# Compare with best full-feature experiment
-# --------------------------------------------------
 
 experiment_path = (
     OUTPUT_DIR
