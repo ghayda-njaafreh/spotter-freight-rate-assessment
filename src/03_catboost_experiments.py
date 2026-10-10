@@ -13,21 +13,10 @@ OUTPUT_DIR = ROOT / "outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
-# --------------------------------------------------
-# Load
-# --------------------------------------------------
-
 df = pd.read_csv(DATA_PATH)
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 df = df.sort_values("date").reset_index(drop=True)
 
-
-# --------------------------------------------------
-# Development folds only
-#
-# IMPORTANT:
-# October remains untouched for now.
-# --------------------------------------------------
 
 FOLDS = [
     {
@@ -51,16 +40,8 @@ FOLDS = [
 ]
 
 
-# --------------------------------------------------
-# Feature engineering
-# --------------------------------------------------
-
 def prepare_features(frame, weight_strategy):
     data = frame.copy()
-
-    # -----------------------------
-    # Weight quality indicators
-    # -----------------------------
 
     data["weight_missing"] = data["weight"].isna().astype(int)
     data["weight_negative"] = (data["weight"] < 0).astype(int)
@@ -82,9 +63,6 @@ def prepare_features(frame, weight_strategy):
             f"Unknown weight strategy: {weight_strategy}"
         )
 
-    # -----------------------------
-    # Date features
-    # -----------------------------
 
     data["month"] = data["date"].dt.month
     data["day_of_week"] = data["date"].dt.dayofweek
@@ -98,9 +76,6 @@ def prepare_features(frame, weight_strategy):
         2 * np.pi * data["day_of_year"] / 365.25
     )
 
-    # -----------------------------
-    # Route
-    # -----------------------------
 
     data["route"] = (
         data["pickup"].astype(str)
@@ -108,7 +83,6 @@ def prepare_features(frame, weight_strategy):
         + data["delivery"].astype(str)
     )
 
-    # CatBoost categorical columns
     categorical = [
         "pickup",
         "delivery",
@@ -148,10 +122,6 @@ def prepare_features(frame, weight_strategy):
     return data[features], categorical
 
 
-# --------------------------------------------------
-# Metrics
-# --------------------------------------------------
-
 def metrics(y_true, y_pred):
     return {
         "mae": mean_absolute_error(y_true, y_pred),
@@ -161,10 +131,6 @@ def metrics(y_true, y_pred):
         "r2": r2_score(y_true, y_pred),
     }
 
-
-# --------------------------------------------------
-# One experiment
-# --------------------------------------------------
 
 def run_experiment(
     target_type,
@@ -315,10 +281,6 @@ def run_experiment(
     }
 
 
-# --------------------------------------------------
-# Run experiments
-# --------------------------------------------------
-
 experiments = []
 
 for target in ["rate", "rpm"]:
@@ -334,10 +296,6 @@ for target in ["rate", "rpm"]:
 
         experiments.append(result)
 
-
-# --------------------------------------------------
-# Ranking
-# --------------------------------------------------
 
 results = pd.DataFrame(experiments)
 results = results.sort_values("mae")
